@@ -619,38 +619,66 @@
             addChatMsg("Genie", `"${data.title}" 템플릿을 로드했습니다. [AI 인프라 설계 생성] 버튼을 누르시면 실시간 토폴로지와 보안 진단이 갱신됩니다.`);
         }
 
-        // Trigger AI architecture generation simulator
+        // Trigger AI architecture generation via real backend call
         function triggerGeneration() {
+            const prompt = promptInput.value.trim();
+            if (!prompt) {
+                alert("요구사항을 입력해주세요.");
+                return;
+            }
+
             // Show Loader
             loadingOverlay.classList.remove('hidden');
             loaderBar.style.width = '10%';
-            
-            const states = [
-                { percent: '25%', text: 'VPC 네트워크 영역 파싱 중...' },
-                { percent: '50%', text: '서브넷 및 라우팅 테이블 구조 배치 중...' },
-                { percent: '75%', text: '컴퓨트 인스턴스 스펙 및 고가용성 클러스터 설계 도출...' },
-                { percent: '90%', text: '보안 정책(Security Group/IAM) 및 비용 최적화 계산 완료...' },
-                { percent: '100%', text: '실시간 시각화 토폴로지 맵 렌더링 중...' }
-            ];
+            loaderStateText.textContent = 'AI Architect Engine에 전송 중...';
 
-            let stateIndex = 0;
-            const interval = setInterval(() => {
-                if (stateIndex < states.length) {
-                    loaderBar.style.width = states[stateIndex].percent;
-                    loaderStateText.textContent = states[stateIndex].text;
-                    stateIndex++;
-                } else {
-                    clearInterval(interval);
-                    completeGeneration();
+            let progress = 10;
+            const progressInterval = setInterval(() => {
+                if (progress < 90) {
+                    progress += 10;
+                    loaderBar.style.width = `${progress}%`;
+                    if (progress === 30) loaderStateText.textContent = '네트워크 구성 설계 및 IP 매핑 중...';
+                    if (progress === 60) loaderStateText.textContent = '클러스터 및 인스턴스 스펙 계산 중...';
+                    if (progress === 80) loaderStateText.textContent = '비용 분석 및 보안 진단 점검 중...';
                 }
-            }, 300); // Complete in 1.5 seconds (300ms * 5)
+            }, 150);
+
+            fetch('/api/design', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ prompt: prompt })
+            })
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error("서버 오류 또는 API 키 설정을 확인하세요.");
+                }
+                return res.json();
+            })
+            .then(data => {
+                clearInterval(progressInterval);
+                loaderBar.style.width = '100%';
+                loaderStateText.textContent = '설계 완료! 렌더링 중...';
+                
+                setTimeout(() => {
+                    loadingOverlay.classList.add('hidden');
+                    applyGenerationResult(data);
+                }, 400);
+            })
+            .catch(err => {
+                clearInterval(progressInterval);
+                loadingOverlay.classList.add('hidden');
+                console.error(err);
+                alert("설계 생성 실패: " + err.message + "\n(로컬 가상 결과로 대체합니다)");
+                
+                // Fallback to presets
+                const fallbackData = PRESETS[currentPreset] || PRESETS.k8s_ha;
+                applyGenerationResult(fallbackData);
+            });
         }
 
-        function completeGeneration() {
-            loadingOverlay.classList.add('hidden');
-            
-            const data = PRESETS[currentPreset];
-            
+        function applyGenerationResult(data) {
             // Update Headers & Top stats
             headerCostIndex.innerHTML = `<i class="fa-solid fa-sack-dollar text-xs"></i> <span>${data.cost}/mo</span>`;
             headerSecurityScore.textContent = `${data.securityScore}/100`;
@@ -695,7 +723,7 @@
             addChatMsg("Genie", `의뢰하신 "${data.title}" 설계를 완료했습니다! 실시간 가용성 보장을 반영한 네트워크 연결선과 스펙 분석이 중앙 화면에 렌더링되었습니다. 우측 차트에서 비용 분담 내역을 확인하고, 즉시 테라폼(Terraform)이나 IaC 코드로 인출 가능합니다.`);
 
             // Pulse inspector with first element
-            if (data.nodes.length > 0) {
+            if (data.nodes && data.nodes.length > 0) {
                 inspectNode(data.nodes[0]);
             }
         }
@@ -965,7 +993,7 @@
 
         // First initial load simulation
         window.addEventListener('DOMContentLoaded', () => {
-            completeGeneration();
+            applyGenerationResult(PRESETS.k8s_ha);
             addGitLog("[SYSTEM] Loaded Default Preset: AWS Multi-AZ K8s Architecture.");
         });
     </script>
