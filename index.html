@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="ko" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InfraGenie AI - Cyberpunk Cloud Architect Dashboard</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cyberBg: '#0B0F19',
+                        cyberDark: '#121826',
+                        cyberCard: '#1A2333',
+                        neonCyan: '#00f0ff',
+                        neonMagenta: '#ff007f',
+                        neonGreen: '#39ff14',
+                        neonYellow: '#fff000',
+                    },
+                    boxShadow: {
+                        neonCyan: '0 0 10px rgba(0, 240, 255, 0.4), 0 0 20px rgba(0, 240, 255, 0.2)',
+                        neonMagenta: '0 0 10px rgba(255, 0, 127, 0.4), 0 0 20px rgba(255, 0, 127, 0.2)',
+                        neonGreen: '0 0 10px rgba(57, 255, 20, 0.4), 0 0 20px rgba(57, 255, 20, 0.2)',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome for futuristic icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Chart.js for beautiful charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@500;600;700&display=swap');
+        
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background-color: #0B0F19;
+            color: #E2E8F0;
+            overflow-x: hidden;
+        }
+
+        .mono {
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        /* Scanline and glowing effects */
+        .scanlines {
+            position: relative;
+            overflow: hidden;
+        }
+        .scanlines::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 10;
+            background-size: 100% 4px, 6px 100%;
+            pointer-events: none;
+        }
+
+        .glow-border-cyan {
+            border: 1px solid rgba(0, 240, 255, 0.4);
+            box-shadow: 0 0 8px rgba(0, 240, 255, 0.15);
+        }
+        .glow-border-cyan:hover {
+            border-color: #00f0ff;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+        }
+
+        .glow-border-magenta {
+            border: 1px solid rgba(255, 0, 127, 0.4);
+            box-shadow: 0 0 8px rgba(255, 0, 127, 0.15);
+        }
+
+        /* SVG Topology connection pulse */
+        @keyframes dash {
+            to {
+                stroke-dashoffset: -40;
+            }
+        }
+        .connection-line {
+            stroke-dasharray: 8, 4;
+            animation: dash 2s linear infinite;
+        }
+
+        /* Grid Background pattern */
+        .grid-bg {
+            background-size: 40px 40px;
+            background-image: 
+                linear-gradient(to right, rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+        }
+
+        /* Hide scrollbars but keep functionality */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(11, 15, 25, 0.5);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 240, 255, 0.3);
+            border-radius: 2px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00f0ff;
+        }
+    </style>
+</head>
+<body class="scanlines grid-bg min-h-screen flex flex-col selection:bg-neonCyan selection:text-black">
+
+    <!-- TOP HEADER BAR -->
+    <header class="border-b border-cyan-500/30 bg-cyberDark/95 backdrop-blur-md px-6 py-3.5 flex flex-wrap justify-between items-center gap-4 sticky top-0 z-50 shadow-md">
+        <div class="flex items-center space-x-3">
+            <div class="relative flex items-center justify-center">
+                <div class="absolute inset-0 bg-neonCyan/20 blur rounded-full animate-ping"></div>
+                <div class="h-10 w-10 rounded-lg bg-gradient-to-br from-neonCyan to-neonMagenta flex items-center justify-center text-cyberBg shadow-neonCyan relative z-10">
+                    <i class="fa-solid fa-wand-magic-sparkles text-lg animate-pulse"></i>
+                </div>
+            </div>
+            <div>
+                <div class="flex items-center space-x-2">
+                    <span class="text-xs uppercase tracking-widest text-neonCyan font-bold mono">Next-Gen Architecture Generator</span>
+                    <span class="bg-red-500/20 text-red-400 text-[10px] px-1.5 py-0.5 rounded border border-red-500/40 uppercase tracking-tighter animate-pulse">PROTOTYPE v2.4</span>
+                </div>
+                <h1 class="text-2xl font-bold tracking-tight text-white flex items-center">
+                    INFRAGENIE <span class="text-neonCyan ml-1.5 font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-neonCyan to-neonMagenta">AI</span>
+                </h1>
+            </div>
+        </div>
+
+        <!-- REALTIME STATUSES -->
+        <div class="flex items-center space-x-6 text-sm">
+            <div class="hidden md:flex flex-col items-end">
+                <span class="text-[10px] uppercase text-slate-500 mono">AI COGNITIVE ENGINE</span>
+                <span class="text-neonGreen flex items-center space-x-1 font-bold mono">
+                    <span class="w-1.5 h-1.5 rounded-full bg-neonGreen animate-pulse"></span>
+                    <span>ACTIVE [LLM-v4.2]</span>
+                </span>
+            </div>
+            
+            <div class="hidden lg:flex flex-col items-end border-l border-slate-800 pl-4">
+                <span class="text-[10px] uppercase text-slate-500 mono">GIT DEPLOY BRANCH</span>
+                <span class="text-neonCyan flex items-center space-x-1.5 font-bold mono">
+                    <i class="fa-solid fa-code-branch"></i>
+                    <span>main (origin)</span>
+                </span>
+            </div>
+
+            <div class="hidden lg:flex flex-col items-end border-l border-slate-800 pl-4">
+                <span class="text-[10px] uppercase text-slate-500 mono">CLOUD COST INDEX</span>
+                <span class="text-neonYellow flex items-center space-x-1 font-bold mono" id="headerCostIndex">
+                    <i class="fa-solid fa-sack-dollar text-xs"></i>
+                    <span>$128.40/mo</span>
+                </span>
+            </div>
+
+            <div class="flex flex-col items-end border-l border-slate-800 pl-4">
+                <span class="text-[10px] uppercase text-slate-500 mono">SECURITY DEFENSE RATING</span>
+                <div class="flex items-center space-x-2">
+                    <span class="text-white font-bold text-sm mono" id="headerSecurityScore">94/100</span>
+                    <div class="w-16 bg-slate-800 h-2 rounded-full overflow-hidden border border-slate-700">
+                        <div id="headerSecurityBar" class="bg-neonGreen h-full rounded-full transition-all duration-1000" style="width: 94%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN DASHBOARD CONTENT -->
+    <main class="flex-1 grid grid-cols-1 xl:grid-cols-12 gap-5 p-4 md:p-6 items-stretch">
+        
+        <!-- LEFT PANEL: NATURAL LANGUAGE INPUT & TEMPLATES (col-span-3) -->
+        <section class="xl:col-span-3 flex flex-col space-y-4 bg-cyberDark/90 backdrop-blur-sm border border-slate-800/80 p-5 rounded-xl shadow-lg relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-neonCyan to-transparent"></div>
+            
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-1">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-terminal text-neonCyan text-sm"></i>
+                    <h2 class="text-md uppercase font-bold tracking-wider text-slate-200">설계 요청 (Natural Language Prompt)</h2>
+                </div>
+                <span class="text-[10px] text-slate-500 font-mono">INFRASTRUCTURE-AS-CODE</span>
+            </div>
+
+            <!-- Natural Language Prompt Area -->
+            <div class="space-y-3">
+                <label class="block text-xs uppercase text-slate-400 font-bold tracking-wider">사용자 인프라 요구사항 입력</label>
+                <div class="relative">
+                    <textarea 
+                        id="promptInput"
+                        class="w-full h-36 bg-cyberBg border border-slate-700/60 rounded-lg p-3 text-sm text-slate-100 focus:outline-none focus:border-neonCyan focus:ring-1 focus:ring-neonCyan/40 transition-all font-mono placeholder:text-slate-600 leading-relaxed"
+                        placeholder="예: 서울 리전에 퍼블릭 서브넷 2개와 프라이빗 서브넷 2개로 분할된 VPC를 만들고, 퍼블릭에 고가용성 ALB를 배치한 후, 프라이빗에 K8s 워커노드 3대와 Aurora PostgreSQL DB 복제 구조를 설계해줘."
+                    >서울 리전에 퍼블릭 서브넷 2개와 프라이빗 서브넷 2개로 분할된 VPC를 만들고, 퍼블릭에 고가용성 ALB를 배치한 후, 프라이빗에 K8s 워커노드 3대와 Aurora PostgreSQL DB 복제 구조를 설계해줘.</textarea>
+                    <div class="absolute bottom-2 right-2 flex space-x-1">
+                        <button id="clearPrompt" class="text-slate-500 hover:text-white text-xs px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 transition" title="Clear input">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pre-defined Templates -->
+            <div class="space-y-2.5">
+                <span class="block text-xs uppercase text-slate-400 font-bold tracking-wider">추천 설계 템플릿 (Quick Templates)</span>
+                
+                <!-- Template 1 -->
+                <button 
+                    onclick="loadTemplate('k8s_ha')" 
+                    class="w-full text-left bg-cyberCard hover:bg-slate-800 border border-slate-800 hover:border-neonCyan/50 p-3 rounded-lg transition-all group relative overflow-hidden"
+                >
+                    <div class="flex justify-between items-start">
+                        <span class="text-xs uppercase font-bold text-neonCyan group-hover:text-white tracking-wide">고가용성 K8s 구조</span>
+                        <span class="text-[9px] bg-neonCyan/10 text-neonCyan px-1.5 py-0.5 rounded border border-neonCyan/30 mono">AWS Cluster</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-1 line-clamp-2">VPC, Route53, ALB, ControlPlane 3대, WorkerNode 3대, Aurora Multi-AZ DB 구성</p>
+                    <div class="absolute right-2 bottom-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <i class="fa-solid fa-circle-arrow-right text-neonCyan text-xs"></i>
+                    </div>
+                </button>
+
+                <!-- Template 2 -->
+                <button 
+                    onclick="loadTemplate('web_storage')" 
+                    class="w-full text-left bg-cyberCard hover:bg-slate-800 border border-slate-800 hover:border-neonMagenta/50 p-3 rounded-lg transition-all group relative overflow-hidden"
+                >
+                    <div class="flex justify-between items-start">
+                        <span class="text-xs uppercase font-bold text-neonMagenta group-hover:text-white tracking-wide">Web Server & Storage</span>
+                        <span class="text-[9px] bg-neonMagenta/10 text-neonMagenta px-1.5 py-0.5 rounded border border-neonMagenta/30 mono">Static & Dynamic</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-1 line-clamp-2">CloudFront CDN, S3 Object Storage, Nginx Auto Scaling, Multi-Region RDS 복제</p>
+                    <div class="absolute right-2 bottom-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <i class="fa-solid fa-circle-arrow-right text-neonMagenta text-xs"></i>
+                    </div>
+                </button>
+
+                <!-- Template 3 -->
+                <button 
+                    onclick="loadTemplate('ai_inference')" 
+                    class="w-full text-left bg-cyberCard hover:bg-slate-800 border border-slate-800 hover:border-neonYellow/50 p-3 rounded-lg transition-all group relative overflow-hidden"
+                >
+                    <div class="flex justify-between items-start">
+                        <span class="text-xs uppercase font-bold text-neonYellow group-hover:text-white tracking-wide">AI 분석 & 최적화 인프라</span>
+                        <span class="text-[9px] bg-neonYellow/10 text-neonYellow px-1.5 py-0.5 rounded border border-neonYellow/30 mono">AI Pipeline</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-1 line-clamp-2">FastAPI Gateway, GPU PyTorch NodeCluster, Kafka Message Buffer, MongoDB Cluster</p>
+                    <div class="absolute right-2 bottom-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <i class="fa-solid fa-circle-arrow-right text-neonYellow text-xs"></i>
+                    </div>
+                </button>
+            </div>
+
+            <div class="pt-2 mt-auto">
+                <button 
+                    id="btnGenerate" 
+                    class="w-full py-3.5 px-4 bg-gradient-to-r from-neonCyan to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-900 font-bold uppercase rounded-lg shadow-neonCyan hover:shadow-cyan-400/50 transition-all duration-300 flex items-center justify-center space-x-2 text-sm tracking-wider"
+                >
+                    <i class="fa-solid fa-microchip text-base animate-pulse"></i>
+                    <span>AI 인프라 설계 생성</span>
+                </button>
+            </div>
+
+            <!-- Git Commit & Push Logs -->
+            <div class="bg-cyberBg/90 border border-slate-800 p-3 rounded-lg mt-3">
+                <div class="flex justify-between items-center text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-2">
+                    <span>GitOps Deploy Agent</span>
+                    <span class="text-neonGreen mono">Connected</span>
+                </div>
+                <div class="space-y-1.5 max-h-[140px] overflow-y-auto text-[11px] font-mono text-slate-300" id="gitLogs">
+                    <div class="text-slate-500">[SYSTEM] Initialization success.</div>
+                    <div class="text-slate-500">[SYSTEM] Git repository tracking ap-northeast-2.</div>
+                    <div class="text-slate-400"><span class="text-neonCyan">commit 9c7da8f</span> - Ready for generator requests.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CENTER PANEL: DYNAMIC INTERACTIVE INFRASTRUCTURE TOPOLOGY MAP (col-span-6) -->
+        <section class="xl:col-span-6 flex flex-col space-y-4 bg-cyberDark/90 backdrop-blur-sm border border-slate-800/80 p-5 rounded-xl shadow-lg relative min-h-[550px]">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-neonCyan via-neonMagenta to-neonGreen"></div>
+            
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <div class="flex items-center space-x-2.5">
+                    <span class="relative flex h-3 w-3">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-neonCyan opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-3 w-3 bg-neonCyan"></span>
+                    </span>
+                    <h2 class="text-md uppercase font-bold tracking-wider text-slate-200">실시간 AI 아키텍처 토폴로지 맵 (Live Architecture Map)</h2>
+                </div>
+                
+                <!-- Control Badges -->
+                <div class="flex space-x-2">
+                    <span class="text-[10px] bg-slate-800 text-slate-400 px-2 py-1 rounded border border-slate-700/80 mono">ZOOM: AUTO</span>
+                    <span class="text-[10px] bg-slate-800 text-slate-400 px-2 py-1 rounded border border-slate-700/80 mono" id="providerTag">PROVIDER: AWS</span>
+                </div>
+            </div>
+
+            <!-- Interactivity Hints & Status banner -->
+            <div class="bg-slate-900/40 border border-slate-800 px-4 py-2 rounded-lg flex justify-between items-center text-xs">
+                <span class="text-slate-400"><i class="fa-solid fa-info-circle text-neonCyan mr-1"></i> 각 노드 박스를 클릭하여 세부 자원 상세와 Cloud Specs를 확인하세요.</span>
+                <span id="activePresetBadge" class="text-neonCyan uppercase font-bold tracking-widest text-[11px] mono">고가용성 K8s 구조</span>
+            </div>
+
+            <!-- Topology Sandbox Frame -->
+            <div class="relative flex-1 bg-cyberBg border border-slate-800/80 rounded-lg overflow-hidden flex items-center justify-center p-4">
+                
+                <!-- Animated grid dynamic canvas lines -->
+                <svg id="svgCanvas" class="absolute inset-0 w-full h-full pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Lines are dynamically rendered via Javascript connecting specific elements -->
+                </svg>
+
+                <!-- Absolute Loader overlay during generation (1.5 seconds) -->
+                <div id="loadingOverlay" class="absolute inset-0 bg-cyberBg/95 backdrop-blur-sm flex flex-col items-center justify-center space-y-4 hidden z-30 transition-all duration-300">
+                    <div class="relative">
+                        <div class="w-16 h-16 rounded-full border-4 border-slate-800 border-t-neonCyan animate-spin"></div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <i class="fa-solid fa-robot text-neonCyan text-xl animate-pulse"></i>
+                        </div>
+                    </div>
+                    <div class="text-center space-y-1">
+                        <p class="text-sm font-bold tracking-widest text-white uppercase mono">Genie AI Engine Processing...</p>
+                        <p id="loaderStateText" class="text-xs text-neonCyan font-mono">VPC 및 네트워크 설계 도출 중...</p>
+                    </div>
+                    <div class="w-64 bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                        <div id="loaderBar" class="bg-gradient-to-r from-neonCyan to-neonMagenta h-full transition-all duration-100" style="width: 15%"></div>
+                    </div>
+                </div>
+
+                <!-- Dynamic Node Grid Layout - Generated dynamically via JS, but starts with high-availability K8S preset -->
+                <div id="topologyContainer" class="relative w-full h-full flex flex-col justify-between items-center py-6 min-h-[460px] z-10 transition-all duration-500">
+                    <!-- Nodes will populate here dynamically -->
+                </div>
+            </div>
+
+            <!-- Selected Node Inspector Info Box (Bottom overlay) -->
+            <div id="inspectorPanel" class="bg-slate-900/90 border border-neonCyan/40 p-3 rounded-lg flex items-start space-x-3 transition-all transform duration-300 opacity-100 scale-100">
+                <div class="bg-neonCyan/10 p-2.5 rounded border border-neonCyan/30 text-neonCyan">
+                    <i id="inspectorIcon" class="fa-solid fa-server text-lg"></i>
+                </div>
+                <div class="flex-1 grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                    <div>
+                        <span class="block text-slate-500 text-[10px] uppercase font-bold">NODE NAME</span>
+                        <span id="inspectName" class="font-bold text-slate-200">K8s-Worker-Node-01</span>
+                    </div>
+                    <div>
+                        <span class="block text-slate-500 text-[10px] uppercase font-bold">AWS INSTANCE TYPE</span>
+                        <span id="inspectSpec" class="font-bold text-neonGreen mono">m5.xlarge (4 vCPU, 16GB)</span>
+                    </div>
+                    <div>
+                        <span class="block text-slate-500 text-[10px] uppercase font-bold">SIMULATED NET IP</span>
+                        <span id="inspectIP" class="font-bold text-slate-300 mono">10.0.10.45</span>
+                    </div>
+                    <div>
+                        <span class="block text-slate-500 text-[10px] uppercase font-bold">HEALTH / REPLICAS</span>
+                        <span id="inspectStatus" class="font-bold text-neonGreen flex items-center space-x-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-neonGreen animate-pulse"></span>
+                            <span>Healthy (3/3 Nodes)</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- RIGHT PANEL: SECURITY EVALUATION, CHARTS & CONSOLE (col-span-3) -->
+        <section class="xl:col-span-3 flex flex-col space-y-4 bg-cyberDark/90 backdrop-blur-sm border border-slate-800/80 p-5 rounded-xl shadow-lg relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-1 h-full bg-gradient-to-b from-neonMagenta to-transparent"></div>
+            
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-1">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-chart-line text-neonMagenta text-sm"></i>
+                    <h2 class="text-md uppercase font-bold tracking-wider text-slate-200">인프라 분석 & 최적화 (AI Insights)</h2>
+                </div>
+                <span class="text-[10px] text-slate-500 font-mono">DASHBOARD</span>
+            </div>
+
+            <!-- Top Level Statistics (Vulnerabilities, Cost) -->
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-cyberBg border border-slate-800 p-3 rounded-lg text-center relative overflow-hidden">
+                    <span class="block text-[10px] uppercase text-slate-500 font-bold tracking-wider">Estimated Monthly Cost</span>
+                    <span id="costValue" class="block text-xl font-bold text-neonYellow mono mt-1">$128.40</span>
+                    <span class="text-[9px] text-neonGreen font-mono"><i class="fa-solid fa-caret-down"></i> -15% Optimised</span>
+                    <div class="absolute right-1 bottom-1 text-slate-800 text-3xl opacity-20"><i class="fa-solid fa-coins"></i></div>
+                </div>
+                <div class="bg-cyberBg border border-slate-800 p-3 rounded-lg text-center relative overflow-hidden">
+                    <span class="block text-[10px] uppercase text-slate-500 font-bold tracking-wider">Vulnerabilities Detected</span>
+                    <span id="vulnerabilityCount" class="block text-xl font-bold text-neonGreen mono mt-1">0</span>
+                    <span id="vulnerabilitySub" class="text-[9px] text-slate-400 font-mono">Secure Shield Active</span>
+                    <div class="absolute right-1 bottom-1 text-slate-800 text-3xl opacity-20"><i class="fa-solid fa-shield-halved"></i></div>
+                </div>
+            </div>
+
+            <!-- Cost Breakdown Mini Chart -->
+            <div class="bg-cyberBg border border-slate-800 p-3 rounded-lg">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-xs uppercase text-slate-400 font-bold tracking-wider">리소스별 비용 기여도 (Cost Share)</span>
+                    <span class="text-[9px] text-slate-500 mono">Chart.js Live</span>
+                </div>
+                <div class="h-32 w-full flex items-center justify-center relative">
+                    <canvas id="costChart"></canvas>
+                </div>
+            </div>
+
+            <!-- AI Diagnosis Recommendation panel -->
+            <div class="bg-cyberBg border border-slate-800 p-3 rounded-lg flex-1 flex flex-col min-h-[180px]">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-xs uppercase text-slate-400 font-bold tracking-wider">보안 진단 및 최적화 리포트</span>
+                    <span class="text-[9px] bg-neonMagenta/20 text-neonMagenta px-1 rounded border border-neonMagenta/30 font-bold">SECURE AI</span>
+                </div>
+                <div class="space-y-2.5 overflow-y-auto flex-1 pr-1" id="recomContainer">
+                    <!-- Recommendations are loaded dynamically -->
+                </div>
+            </div>
+
+            <!-- AI Interactive Chat Terminal -->
+            <div class="bg-slate-900/60 border border-slate-800/80 rounded-lg p-3">
+                <span class="block text-[10px] uppercase text-slate-400 font-bold tracking-wider mb-2"><i class="fa-solid fa-comment-dots text-neonCyan mr-1"></i> InfraGenie Copilot</span>
+                <div class="space-y-2 text-xs font-mono max-h-[110px] overflow-y-auto mb-2 pr-1" id="chatHistory">
+                    <div class="text-slate-400"><span class="text-neonCyan">Genie:</span> 반갑습니다! 설계하고 싶으신 클라우드 인프라를 왼쪽 요구사항 입력창에 한글로 자유롭게 적어주시거나, 퀵 템플릿을 선택한 후 [AI 인프라 설계 생성] 버튼을 누르시면 최고의 정교한 구조를 바로 설계해 드립니다.</div>
+                </div>
+                <div class="flex space-x-1.5">
+                    <input 
+                        type="text" 
+                        id="chatInput"
+                        class="flex-1 bg-cyberBg border border-slate-700 text-xs text-white p-2 rounded focus:outline-none focus:border-neonCyan font-mono"
+                        placeholder="예: 보안을 더 강화하는 옵션은?"
+                    >
+                    <button 
+                        id="btnChatSend"
+                        class="px-3 bg-slate-800 hover:bg-slate-700 text-neonCyan border border-slate-700 rounded transition"
+                    >
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER STATUS BAR -->
+    <footer class="border-t border-slate-800 bg-cyberDark/90 px-6 py-2.5 flex flex-wrap justify-between items-center text-xs text-slate-500 font-mono mt-auto">
+        <div class="flex items-center space-x-4">
+            <span>SYSTEM STATUS: <span class="text-neonGreen font-bold animate-pulse">● OPERATIONAL</span></span>
+            <span class="hidden sm:inline">|</span>
+            <span class="hidden sm:inline">VPC CIDR: <span class="text-slate-300 font-bold">10.0.0.0/16</span></span>
+            <span class="hidden md:inline">|</span>
+            <span class="hidden md:inline">DEFAULT REGION: <span class="text-slate-300 font-bold">ap-northeast-2 (Seoul)</span></span>
+        </div>
+        <div class="flex items-center space-x-2">
+            <span>&copy; 2026 InfraGenie AI. Created for Ultimate DevOps Portfolio.</span>
+        </div>
+    </footer>
+
+    <!-- LOGIC & DATA GENERATOR INTERACTION (Vanilla JavaScript) -->
+    <script>
+        // Preset Architectures and exact configurations
+        const PRESETS = {
+            k8s_ha: {
+                title: "고가용성 K8s 구조 (High-Availability AWS K8s)",
+                provider: "AWS Cloud Infrastructure",
+                prompt: "서울 리전에 퍼블릭 서브넷 2개와 프라이빗 서브넷 2개로 분할된 VPC를 만들고, 퍼블릭에 고가용성 ALB를 배치한 후, 프라이빗에 K8s 워커노드 3대와 Aurora PostgreSQL DB 복제 구조를 설계해줘.",
+                cost: "$342.10",
+                vulnerabilities: 0,
+                securityScore: 98,
+                costBreakdown: [120, 110, 80, 32.1], // ControlPlane, Workers, DB, Network/ALB
+                nodes: [
+                    { id: 'dns', type: 'network', name: 'Route 53 DNS', spec: 'Latency Routing', ip: 'Global IP', icon: 'fa-solid fa-globe', tier: 1 },
+                    { id: 'alb', type: 'network', name: 'Application Load Balancer', spec: 'Dual-Stack (Public ALB)', ip: '52.78.23.49 / 10.0.1.12', icon: 'fa-solid fa-shuffle', tier: 1 },
+                    { id: 'cp_cluster', type: 'compute', name: 'K8s Control Plane Cluster', spec: 't3.medium (3 Replicas)', ip: '10.0.10.11 / 10.0.11.12', icon: 'fa-solid fa-cubes-stacked', tier: 2 },
+                    { id: 'workers', type: 'compute', name: 'K8s Workers NodeGroup', spec: 'm5.xlarge (Auto-scale 3~6)', ip: '10.0.20.45 / 10.0.21.46', icon: 'fa-solid fa-cubes', tier: 2 },
+                    { id: 'db_master', type: 'database', name: 'Aurora PostgreSQL (Primary)', spec: 'db.r6g.large (Multi-AZ)', ip: '10.0.30.94 (Writer)', icon: 'fa-solid fa-database', tier: 3 },
+                    { id: 'db_replica', type: 'database', name: 'Aurora PostgreSQL (Replica)', spec: 'db.r6g.large (Read Replica)', ip: '10.0.31.205 (Reader)', icon: 'fa-solid fa-database', textDim: true, tier: 3 }
+                ],
+                connections: [
+                    { from: 'dns', to: 'alb' },
+                    { from: 'alb', to: 'cp_cluster' },
+                    { from: 'cp_cluster', to: 'workers' },
+                    { from: 'workers', to: 'db_master' },
+                    { from: 'db_master', to: 'db_replica', dashed: true }
+                ],
+                recommendations: [
+                    { title: "Multi-AZ Control Plane Deployment Enabled", body: "3개의 서로 다른 가용영역(AZ-A, B, C)에 마스터 노드를 배치하여 완벽한 내결함성을 제공합니다.", type: "secure" },
+                    { title: "Aurora Auto-Failover configured", body: "Primary 장애 시 30초 내에 Replica가 Primary로 승격되도록 DNS 레코드 스위칭 및 장애 극복 로직이 활성화되었습니다.", type: "secure" },
+                    { title: "Worker Nodes Auto-Scaling optimization", body: "CPU 부하 70% 도달 시 자동으로 m5.xlarge 인스턴스를 6대까지 확장합니다.", type: "cost" }
+                ],
+                gitMsg: "feat: high availability multi-az K8s cluster and database replica IaC"
+            },
+            web_storage: {
+                title: "Web Server & Object Storage (High Scale Web & CDN)",
+                provider: "AWS Cloud Infrastructure",
+                prompt: "CloudFront CDN과 S3 오브젝트 스토리지를 연동하여 정적 파일을 처리하고, 백엔드는 Nginx 오토스케일링 그룹과 Multi-Region RDS 복제 구조를 설계해줘. 보안을 극대화해줘.",
+                cost: "$184.50",
+                vulnerabilities: 1, // Let's put a minor warning for interactive demo
+                securityScore: 89,
+                costBreakdown: [35, 25, 64, 60.5], // CDN/S3, Nginx ASG, Multi-Region RDS, Network
+                nodes: [
+                    { id: 'cf', type: 'network', name: 'CloudFront CDN Edge', spec: 'Geo-Redundant (HTTPS)', ip: 'Global Edge Cache', icon: 'fa-solid fa-bolt', tier: 1 },
+                    { id: 's3', type: 'storage', name: 'S3 Asset Bucket', spec: 'Object Storage (Private-Access)', ip: 's3://assets-prod-genie', icon: 'fa-solid fa-bucket', tier: 1 },
+                    { id: 'web_asg', type: 'compute', name: 'Nginx Auto-Scaling Group', spec: 't3.small (Min 2 ~ Max 10)', ip: '10.0.5.15 / 10.0.6.22', icon: 'fa-solid fa-server', tier: 2 },
+                    { id: 'rds_master', type: 'database', name: 'Amazon RDS MySQL (Primary)', spec: 'db.m6g.xlarge', ip: '10.0.12.112 (Primary)', icon: 'fa-solid fa-database', tier: 3 },
+                    { id: 'rds_dr', type: 'database', name: 'Amazon RDS MySQL (DR Region)', spec: 'db.m6g.xlarge (us-east-1)', ip: '192.168.1.55 (DR-Read)', icon: 'fa-solid fa-network-wired', tier: 3 }
+                ],
+                connections: [
+                    { from: 'cf', to: 's3' },
+                    { from: 'cf', to: 'web_asg' },
+                    { from: 'web_asg', to: 'rds_master' },
+                    { from: 'rds_master', to: 'rds_dr', dashed: true }
+                ],
+                recommendations: [
+                    { title: "CloudFront OAI (Origin Access Identity) Enforced", body: "S3 버킷은 오직 CloudFront를 통해서만 접근할 수 있어 직접적인 데이터 유출 공격을 사전에 완벽히 차단합니다.", type: "secure" },
+                    { title: "Dynamic Multi-Region Read Replica", body: "재해 복구(DR)를 위해 서울 리전의 주 RDS에서 미국 버지니아 리전으로 비동기 복제본을 실시간 송출합니다.", type: "secure" },
+                    { title: "Unencrypted S3 Bucket Target Warning", body: "S3 버킷에 KMS 기본 암호화가 적용되지 않은 영역이 감지되었습니다. AES-256 자동 강제화 코드를 적용하시기 바랍니다.", type: "warning" }
+                ],
+                gitMsg: "feat: deploy CloudFront S3 static hosting + Multi-Region RDS Mysql replica"
+            },
+            ai_inference: {
+                title: "AI 분석 & 최적화 인프라 (High Performance AI Pipelines)",
+                provider: "AWS / Hybrid GPU Compute",
+                prompt: "대량의 트래픽을 처리하는 FastAPI Gateway와 고성능 GPU PyTorch 워커노드 클러스터, 그리고 Kafka 메시지 브로커와 MongoDB NoSQL 클러스터 아키텍처를 설계해줘.",
+                cost: "$695.20",
+                vulnerabilities: 0,
+                securityScore: 95,
+                costBreakdown: [85, 340, 150, 120.2], // FastAPI, GPU Workers, Kafka Cluster, MongoDB
+                nodes: [
+                    { id: 'fastapi', type: 'compute', name: 'FastAPI Web Gateway', spec: 't3.xlarge (Load Balanced)', ip: '10.10.1.5 / 10.10.2.8', icon: 'fa-solid fa-fire', tier: 1 },
+                    { id: 'kafka', type: 'network', name: 'Apache Kafka Event Buffer', spec: '3-Broker Cluster', ip: '10.10.15.10 / 10.10.15.11', icon: 'fa-solid fa-right-left', tier: 1 },
+                    { id: 'gpu_cluster', type: 'compute', name: 'GPU PyTorch Inference Node', spec: 'g5.4xlarge (NVIDIA A10G)', ip: '10.10.50.4', icon: 'fa-solid fa-brain', tier: 2 },
+                    { id: 'mongodb', type: 'database', name: 'MongoDB NoSQL Sharded DB', spec: '3-Node Replica Set', ip: '10.10.100.22', icon: 'fa-solid fa-leaf', tier: 3 }
+                ],
+                connections: [
+                    { from: 'fastapi', to: 'kafka' },
+                    { from: 'kafka', to: 'gpu_cluster' },
+                    { from: 'gpu_cluster', to: 'mongodb' }
+                ],
+                recommendations: [
+                    { title: "GPU Host Thermal & Auto-scale Optimisation", body: "NVIDIA TensorRT 가속 인프라를 적용하고, 추론 큐(Queue) 대기열이 50개 이상일 시 GPU 인스턴스가 1.5초 내에 자동 스케일 업 되도록 최적화했습니다.", type: "secure" },
+                    { title: "Kafka Resilient Partitioning Configured", body: "3개 가용영역에 고르게 파티션을 복제하여 노드 1대 다운 시에도 메시지 손실 제로 상태를 실현합니다.", type: "secure" },
+                    { title: "GPU Compute High Cost Warning", body: "g5.4xlarge 인스턴스는 지속 동작 시 고비용이 유발됩니다. Spot Instance 혼합 오토스케일 설정을 사용하는 코드를 제공합니다.", type: "warning" }
+                ],
+                gitMsg: "feat: provision ultra-fast GPU PyTorch workers, Kafka clusters and MongoDB Atlas"
+            }
+        };
+
+        let currentPreset = 'k8s_ha';
+        let costChartInstance = null;
+
+        // Initialize elements
+        const btnGenerate = document.getElementById('btnGenerate');
+        const promptInput = document.getElementById('promptInput');
+        const clearPrompt = document.getElementById('clearPrompt');
+        const activePresetBadge = document.getElementById('activePresetBadge');
+        const providerTag = document.getElementById('providerTag');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loaderStateText = document.getElementById('loaderStateText');
+        const loaderBar = document.getElementById('loaderBar');
+        const topologyContainer = document.getElementById('topologyContainer');
+        const svgCanvas = document.getElementById('svgCanvas');
+        const gitLogs = document.getElementById('gitLogs');
+
+        // Inspector elements
+        const inspectName = document.getElementById('inspectName');
+        const inspectSpec = document.getElementById('inspectSpec');
+        const inspectIP = document.getElementById('inspectIP');
+        const inspectStatus = document.getElementById('inspectStatus');
+        const inspectorIcon = document.getElementById('inspectorIcon');
+        const inspectorPanel = document.getElementById('inspectorPanel');
+
+        // Stats elements
+        const costValue = document.getElementById('costValue');
+        const vulnerabilityCount = document.getElementById('vulnerabilityCount');
+        const vulnerabilitySub = document.getElementById('vulnerabilitySub');
+        const headerCostIndex = document.getElementById('headerCostIndex');
+        const headerSecurityScore = document.getElementById('headerSecurityScore');
+        const headerSecurityBar = document.getElementById('headerSecurityBar');
+        const recomContainer = document.getElementById('recomContainer');
+
+        // Chat elements
+        const chatInput = document.getElementById('chatInput');
+        const btnChatSend = document.getElementById('btnChatSend');
+        const chatHistory = document.getElementById('chatHistory');
+
+        // Clear Prompt Action
+        clearPrompt.addEventListener('click', () => {
+            promptInput.value = '';
+            promptInput.focus();
+        });
+
+        // Click generator
+        btnGenerate.addEventListener('click', () => {
+            triggerGeneration();
+        });
+
+        // Handle prompt input customization (If user types, try to match keywords to choose the closest preset)
+        promptInput.addEventListener('input', () => {
+            const val = promptInput.value.toLowerCase();
+            let matched = 'k8s_ha';
+            if (val.includes('s3') || val.includes('cloudfront') || val.includes('web server') || val.includes('storage')) {
+                matched = 'web_storage';
+            } else if (val.includes('gpu') || val.includes('ai') || val.includes('inference') || val.includes('pytorch') || val.includes('kafka')) {
+                matched = 'ai_inference';
+            }
+            if (matched !== currentPreset) {
+                currentPreset = matched;
+                activePresetBadge.textContent = PRESETS[matched].title.split(' ')[0];
+            }
+        });
+
+        function loadTemplate(presetKey) {
+            currentPreset = presetKey;
+            const data = PRESETS[presetKey];
+            promptInput.value = data.prompt;
+            activePresetBadge.textContent = data.title.split(' ')[0];
+            
+            // Fast status feedback before manual generate trigger
+            addGitLog(`[LOCAL] Ready to generate design: "${data.title}" template loaded.`);
+            addChatMsg("Genie", `"${data.title}" 템플릿을 로드했습니다. [AI 인프라 설계 생성] 버튼을 누르시면 실시간 토폴로지와 보안 진단이 갱신됩니다.`);
+        }
+
+        // Trigger AI architecture generation simulator
+        function triggerGeneration() {
+            // Show Loader
+            loadingOverlay.classList.remove('hidden');
+            loaderBar.style.width = '10%';
+            
+            const states = [
+                { percent: '25%', text: 'VPC 네트워크 영역 파싱 중...' },
+                { percent: '50%', text: '서브넷 및 라우팅 테이블 구조 배치 중...' },
+                { percent: '75%', text: '컴퓨트 인스턴스 스펙 및 고가용성 클러스터 설계 도출...' },
+                { percent: '90%', text: '보안 정책(Security Group/IAM) 및 비용 최적화 계산 완료...' },
+                { percent: '100%', text: '실시간 시각화 토폴로지 맵 렌더링 중...' }
+            ];
+
+            let stateIndex = 0;
+            const interval = setInterval(() => {
+                if (stateIndex < states.length) {
+                    loaderBar.style.width = states[stateIndex].percent;
+                    loaderStateText.textContent = states[stateIndex].text;
+                    stateIndex++;
+                } else {
+                    clearInterval(interval);
+                    completeGeneration();
+                }
+            }, 300); // Complete in 1.5 seconds (300ms * 5)
+        }
+
+        function completeGeneration() {
+            loadingOverlay.classList.add('hidden');
+            
+            const data = PRESETS[currentPreset];
+            
+            // Update Headers & Top stats
+            headerCostIndex.innerHTML = `<i class="fa-solid fa-sack-dollar text-xs"></i> <span>${data.cost}/mo</span>`;
+            headerSecurityScore.textContent = `${data.securityScore}/100`;
+            headerSecurityBar.style.width = `${data.securityScore}%`;
+            if (data.securityScore >= 95) {
+                headerSecurityBar.className = "bg-neonGreen h-full rounded-full transition-all duration-1000";
+            } else if (data.securityScore >= 85) {
+                headerSecurityBar.className = "bg-neonYellow h-full rounded-full transition-all duration-1000";
+            } else {
+                headerSecurityBar.className = "bg-neonMagenta h-full rounded-full transition-all duration-1000";
+            }
+
+            // Update Left statistics panel
+            costValue.textContent = data.cost;
+            vulnerabilityCount.textContent = data.vulnerabilities;
+            if (data.vulnerabilities > 0) {
+                vulnerabilityCount.className = "block text-xl font-bold text-neonMagenta mono mt-1";
+                vulnerabilitySub.innerHTML = `<span class="text-neonMagenta"><i class="fa-solid fa-triangle-exclamation"></i> Action Required</span>`;
+            } else {
+                vulnerabilityCount.className = "block text-xl font-bold text-neonGreen mono mt-1";
+                vulnerabilitySub.innerHTML = `<span class="text-neonGreen">Secure Shield Active</span>`;
+            }
+
+            providerTag.textContent = `PROVIDER: ${data.provider.split(' ')[0].toUpperCase()}`;
+
+            // Render Topology
+            renderTopology(data);
+
+            // Update Charts
+            renderChart(data.costBreakdown);
+
+            // Update Recommendations
+            renderRecommendations(data.recommendations);
+
+            // Commit to Git simulation
+            const commitHash = Math.random().toString(16).substring(2, 9);
+            addGitLog(`[AI] Arch design generated successfully.`);
+            addGitLog(`<span class="text-neonCyan">git commit -m "${data.gitMsg}"</span>`);
+            addGitLog(`<span class="text-neonGreen">git push origin main</span> (Success - commit hash: ${commitHash})`);
+
+            // Bot Chat response
+            addChatMsg("Genie", `의뢰하신 "${data.title}" 설계를 완료했습니다! 실시간 가용성 보장을 반영한 네트워크 연결선과 스펙 분석이 중앙 화면에 렌더링되었습니다. 우측 차트에서 비용 분담 내역을 확인하고, 즉시 테라폼(Terraform)이나 IaC 코드로 인출 가능합니다.`);
+
+            // Pulse inspector with first element
+            if (data.nodes.length > 0) {
+                inspectNode(data.nodes[0]);
+            }
+        }
+
+        function renderTopology(data) {
+            // Group nodes by tier to build dynamic CSS layer flex layouts
+            const tiers = { 1: [], 2: [], 3: [] };
+            data.nodes.forEach(n => {
+                if (tiers[n.tier]) tiers[n.tier].push(n);
+            });
+
+            // HTML string construct
+            let html = '';
+            
+            // Build tiers
+            for (let t = 1; t <= 3; t++) {
+                let label = '';
+                let borderColor = 'border-slate-800';
+                if (t === 1) { label = 'Public Tier (Network & Gateway / CDN)'; borderColor = 'border-neonCyan/30'; }
+                if (t === 2) { label = 'Private Tier (Compute Cluster / Inference)'; borderColor = 'border-blue-500/30'; }
+                if (t === 3) { label = 'Secure DB Tier (Data Storage)'; borderColor = 'border-neonMagenta/30'; }
+
+                html += `
+                <div class="w-full border ${borderColor} bg-cyberDark/40 p-3 rounded-lg flex flex-col items-center space-y-3 relative">
+                    <span class="absolute top-1 left-2 text-[9px] uppercase tracking-widest text-slate-500 mono">${label}</span>
+                    <div class="flex flex-wrap justify-center gap-6 pt-3 w-full">
+                `;
+
+                tiers[t].forEach(node => {
+                    const statusDot = node.textDim ? 'bg-slate-600' : 'bg-neonGreen';
+                    const activeColor = t === 1 ? 'hover:shadow-neonCyan hover:border-neonCyan' : (t === 3 ? 'hover:shadow-neonMagenta hover:border-neonMagenta' : 'hover:shadow-neonGreen hover:border-neonGreen');
+                    
+                    html += `
+                        <div 
+                            id="node-${node.id}"
+                            onclick='inspectNode(${JSON.stringify(node)})'
+                            class="cursor-pointer bg-cyberCard border border-slate-700/80 rounded-lg p-3 w-48 transition-all transform hover:-translate-y-1 ${activeColor} flex items-center space-x-3 relative z-20 group"
+                        >
+                            <div class="h-9 w-9 rounded bg-slate-800/80 flex items-center justify-center text-neonCyan group-hover:text-white transition">
+                                <i class="${node.icon} text-base"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-xs font-bold text-slate-200 truncate leading-tight">${node.name}</h3>
+                                <span class="text-[9px] text-slate-400 font-mono block truncate">${node.spec}</span>
+                                <div class="flex items-center space-x-1 mt-1">
+                                    <span class="w-1.5 h-1.5 rounded-full ${statusDot}"></span>
+                                    <span class="text-[9px] text-slate-500 font-mono">${node.ip}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += `
+                    </div>
+                </div>
+                `;
+            }
+
+            topologyContainer.innerHTML = html;
+
+            // Give elements a tiny frame before calculating absolute SVG connection paths
+            setTimeout(() => {
+                drawConnections(data.connections);
+            }, 100);
+        }
+
+        // Draw active glow connections using dynamic SVG paths
+        function drawConnections(connections) {
+            svgCanvas.innerHTML = '';
+            
+            const canvasRect = svgCanvas.getBoundingClientRect();
+
+            connections.forEach(conn => {
+                const fromEl = document.getElementById(`node-${conn.from}`);
+                const toEl = document.getElementById(`node-${conn.to}`);
+
+                if (fromEl && toEl) {
+                    const r1 = fromEl.getBoundingClientRect();
+                    const r2 = toEl.getBoundingClientRect();
+
+                    // Calculate center bottom of the 'from' node and center top of the 'to' node
+                    const x1 = (r1.left + r1.right) / 2 - canvasRect.left;
+                    const y1 = r1.bottom - canvasRect.top;
+                    const x2 = (r2.left + r2.right) / 2 - canvasRect.left;
+                    const y2 = r2.top - canvasRect.top;
+
+                    // Draw an organic curve
+                    const mx = (x1 + x2) / 2;
+                    const my = (y1 + y2) / 2;
+                    const pathD = `M ${x1} ${y1} C ${x1} ${my}, ${x2} ${my}, ${x2} ${y2}`;
+
+                    const strokeColor = conn.dashed ? 'rgba(255, 0, 127, 0.6)' : 'rgba(0, 240, 255, 0.6)';
+                    const dashArray = conn.dashed ? '6,6' : '8,4';
+
+                    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    path.setAttribute("d", pathD);
+                    path.setAttribute("fill", "none");
+                    path.setAttribute("stroke", strokeColor);
+                    path.setAttribute("stroke-width", "2.2");
+                    path.setAttribute("class", "connection-line");
+                    path.style.strokeDasharray = dashArray;
+                    path.style.animation = "dash 1.8s linear infinite";
+
+                    svgCanvas.appendChild(path);
+                }
+            });
+        }
+
+        function inspectNode(node) {
+            inspectName.textContent = node.name;
+            inspectSpec.textContent = node.spec;
+            inspectIP.textContent = node.ip;
+            
+            if (node.textDim) {
+                inspectStatus.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span> <span>Standby / Replica Ready</span>`;
+            } else {
+                inspectStatus.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-neonGreen animate-pulse"></span> <span class="text-neonGreen">Healthy (Active)</span>`;
+            }
+
+            // Extract icon
+            inspectorIcon.className = `${node.icon} text-lg`;
+
+            // visual pulse of selector inspector
+            inspectorPanel.className = "bg-slate-900/90 border border-neonCyan p-3 rounded-lg flex items-start space-x-3 transition-all transform scale-[1.01] duration-150";
+            setTimeout(() => {
+                inspectorPanel.className = "bg-slate-900/90 border border-neonCyan/40 p-3 rounded-lg flex items-start space-x-3 transition-all transform scale-100 duration-150";
+            }, 200);
+        }
+
+        // Render Chart using Chart.js
+        function renderChart(dataArr) {
+            const ctx = document.getElementById('costChart').getContext('2d');
+            
+            if (costChartInstance) {
+                costChartInstance.destroy();
+            }
+
+            costChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Gateway/CDN', 'Compute Cluster', 'Databases', 'Traffic/Network'],
+                    datasets: [{
+                        data: dataArr,
+                        backgroundColor: [
+                            '#00f0ff', // neonCyan
+                            '#39ff14', // neonGreen
+                            '#ff007f', // neonMagenta
+                            '#fff000'  // neonYellow
+                        ],
+                        borderWidth: 1,
+                        borderColor: '#121826'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'right',
+                            labels: {
+                                color: '#E2E8F0',
+                                font: {
+                                    size: 10,
+                                    family: 'Share Tech Mono'
+                                },
+                                boxWidth: 12
+                            }
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+        }
+
+        // Render recommendations
+        function renderRecommendations(items) {
+            let html = '';
+            items.forEach(item => {
+                let badgeColor = 'bg-neonGreen/10 text-neonGreen border-neonGreen/30';
+                let icon = 'fa-solid fa-shield-halved';
+                if (item.type === 'cost') {
+                    badgeColor = 'bg-neonYellow/10 text-neonYellow border-neonYellow/30';
+                    icon = 'fa-solid fa-coins';
+                } else if (item.type === 'warning') {
+                    badgeColor = 'bg-neonMagenta/10 text-neonMagenta border-neonMagenta/30';
+                    icon = 'fa-solid fa-triangle-exclamation';
+                }
+
+                html += `
+                    <div class="bg-cyberCard/60 border border-slate-800 p-2.5 rounded hover:border-slate-700 transition">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px] font-bold text-slate-200 flex items-center gap-1.5">
+                                <i class="${icon} text-xs text-slate-400"></i>
+                                ${item.title}
+                            </span>
+                            <span class="text-[9px] px-1 rounded border ${badgeColor} uppercase mono">${item.type}</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-1 leading-relaxed">${item.body}</p>
+                    </div>
+                `;
+            });
+            recomContainer.innerHTML = html;
+        }
+
+        // Git Log simulation helper
+        function addGitLog(msg) {
+            const time = new Date().toLocaleTimeString();
+            const logLine = document.createElement('div');
+            logLine.innerHTML = `<span class="text-slate-600">[${time}]</span> ${msg}`;
+            gitLogs.appendChild(logLine);
+            gitLogs.scrollTop = gitLogs.scrollHeight;
+        }
+
+        // Chat helper
+        function addChatMsg(sender, text) {
+            const time = new Date().toLocaleTimeString();
+            const msgLine = document.createElement('div');
+            
+            if (sender === "Genie") {
+                msgLine.innerHTML = `<span class="text-neonCyan">Genie:</span> ${text}`;
+            } else {
+                msgLine.innerHTML = `<span class="text-neonMagenta">You:</span> ${text}`;
+            }
+            chatHistory.appendChild(msgLine);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        // Send Custom Chat Event
+        btnChatSend.addEventListener('click', handleChatSubmit);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleChatSubmit();
+        });
+
+        function handleChatSubmit() {
+            const text = chatInput.value.trim();
+            if (!text) return;
+
+            addChatMsg("User", text);
+            chatInput.value = '';
+
+            // Simulate custom Genie intelligence response based on keywords
+            setTimeout(() => {
+                let reply = "좋은 질문입니다! 요청하신 인프라 속성은 Terraform v1.5 규격에 완벽히 호환되도록 생성되었습니다. 보안 점수를 끌어올리기 위해 KMS 키 암호화와 VPC Flow Logs 기능을 추가로 삽입할 수도 있으니 필요하시면 말씀해주세요.";
+                
+                const lowerText = text.toLowerCase();
+                if (lowerText.includes('보안') || lowerText.includes('취약점') || lowerText.includes('해킹')) {
+                    reply = "설계된 아키텍처는 WAF(Web Application Firewall) 및 private 서브넷 배치를 통해 최적의 보안 설계를 보장하고 있습니다. S3 및 RDS 스토리지 암호화 옵션인 AWS KMS 코드를 Terraform template 파일에 주입 완료했습니다.";
+                } else if (lowerText.includes('비용') || lowerText.includes('돈') || lowerText.includes('얼마')) {
+                    reply = "인스턴스를 Spot instance 요금 모델로 가동하면 비용을 최대 70%까지 더 절감할 수 있으며, CPU 사용량이 적은 야간 시간대에 Auto Scaling 그룹의 인스턴스를 자동으로 종료하는 Scheduled Scaling 코드를 가이드 드립니다.";
+                } else if (lowerText.includes('코드') || lowerText.includes('terraform') || lowerText.includes('테라폼')) {
+                    reply = "네! 생성된 아키텍처의 인프라 정의 파일(IaC)을 git push 완료했습니다. 터미널 명령으로 'terraform init && terraform apply'를 수행하면 실시간 리소스로 동기화됩니다.";
+                }
+
+                addChatMsg("Genie", reply);
+            }, 600);
+        }
+
+        // Redraw connections dynamically if browser is resized
+        window.addEventListener('resize', () => {
+            const data = PRESETS[currentPreset];
+            if (data) {
+                drawConnections(data.connections);
+            }
+        });
+
+        // First initial load simulation
+        window.addEventListener('DOMContentLoaded', () => {
+            completeGeneration();
+            addGitLog("[SYSTEM] Loaded Default Preset: AWS Multi-AZ K8s Architecture.");
+        });
+    </script>
+</body>
+</html>
